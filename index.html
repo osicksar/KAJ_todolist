@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en-us">
+
+<head>
+    <title>To do list</title>
+    <link rel="stylesheet" href="index.css">
+</head>
+
+<body>
+    <header>
+        <h1>To do list</h1>
+    </header>
+    <section>
+        <article class="todoListatricle">
+            <input class="newTodo" placeholder="+ Přidat nový úkol" autofocus>
+            <div class="todoList">
+            </div>
+        </article>
+        <article class="settings">
+            <span class="todo-count"></span>
+            <div class="filters">
+                <a id="filterAll" href="#/" class="selected">Všechny</a>
+                <a id="filterActive" href="#/active">Nesplněné</a>
+                <a id="filterCompleted" href="#/completed">Splněné</a>
+            </div>
+            <button class="deleteAll">Smazat všechny úkoly</button>
+        </article>
+    </section>
+
+    <script>
+        const defaultTodos = {
+            todos: [],
+            filter: 'all'
+        };
+
+        //state funkce
+
+        const State = function(defaultTodos, defaultFilter) {
+            this._todos = defaultTodos;
+            this._filter = defaultFilter;
+        }
+
+        State.prototype.addTodo = function(todo) {
+            this._todos.push(todo);
+            localStorage.setItem("todo", JSON.stringify(this._todos));
+
+        }
+
+        State.prototype.setFilter = function(filter) {
+            this._filter = filter;
+        }
+
+        State.prototype.deleteTodos = function() {
+            this._todos = [];
+            this._filter = 'all';
+        }
+
+        const state = new State(defaultTodos.todos, defaultTodos.filter);
+
+        //získání všech todos s daným filtrem
+        State.prototype.getTodos = function() {
+            return this._todos.filter(function(todo) {
+                if (this._filter === 'all') {
+                    return true;
+                } else if (this._filter === 'completed') {
+                    return todo.completed === true;
+                } else if (this._filter === 'active') {
+                    return todo.completed === false;
+                }
+            }.bind(this));
+        }
+
+        //Vytváření nového todo
+        const inputEl = document.querySelector('.newTodo');
+        inputEl.addEventListener('keyup', function(event) {
+            if (event.key !== "Enter") {
+                return;
+            }
+            const todolist = JSON.parse(localStorage.getItem("todo"))
+                //kontrola formuláře - pokud už existuje todo se stejným názvem, nebo je input prázdný, tak nevytváříme nové todo
+            if (todolist !== null) {
+                for (i = 0; i < todolist.length; i++) {
+                    if (inputEl.value === todolist[i].todoValue || inputEl.value === '') {
+                        inputEl.value = '';
+                        return
+
+                    }
+
+                }
+            }
+            const todo = {
+                todoValue: inputEl.value,
+                completed: false
+            };
+            state.addTodo(todo);
+
+
+            // Update html
+            inputEl.value = '';
+            createTodo(state.getTodos(), todoList);
+            location.reload();
+
+        })
+
+        //funkce pro vytvoření todo v html
+        function createTodo(todos, targetEl) {
+            targetEl.innerHTML = '';
+
+            const todosHtmlArray = todos.map(function(todo) {
+                const html =
+                    '<div class="task">' +
+                    '<input class="done" type="checkbox" ' + (todo.completed ? 'checked' : '') + '>' +
+                    '<label class="' + todo.todoValue + '">' + todo.todoValue + '</label>' +
+                    '<button type="submit" id="delete "class="delete"><svg width = "20" height = "20" viewBox = "0 0 20 20" fill = "none" xmlns = "http://www.w3.org/2000/svg" xmlns: xlink = "http://www.w3.org/1999/xlink"><rect width = "20" height = "20" fill = "url(#pattern0)"/><defs><pattern id = "pattern0" patternContentUnits = "objectBoundingBox" width = "1" height = "1"><use xlink: href = "#image0_101_5" transform = "scale(0.0104167)"/></pattern><image id = "image0_101_5" width = "96" height = "96" xlink: href = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAGAAAABgCAYAAADimHc4AAAABmJLR0QA/wD/AP+gvaeTAAACkElEQVR4nO3csW4TQRDG8T+RCEJCVEhUiMdAPEAK3gJeAxpK3gWJDt4EGkQBSYRMUgApgg3YFAeSC6Tcnufz7O59P+nKrG9nbma13ovBzMzMzMysLs+BzY7Xi73fdScigu8kTBQZfCehkCL41Sbh2oS/2YTfRV+KYnqgugsbxwlI5gQkcwKSOQHJnIBkToCZmZmZmVmjnqE7RKn1ehoRuKid8HHQOC0JmXNUAj4FjdOSkDm7AqYLmfOUM+H/OQQumc+Xe2vgJrDadaCogK2AL0FjtWBBQPAh9omdUxsKm2tkAua0EIfN1RUwTZUV4ARM4BY0jVtQMldAsrC5Rm3EYEjmJcOmrGcrhk3YOmKwyApYA6eB49XqhKDgQ/xXB3NoQ6FzjE7AHBbi0Dm6Asq5ApJVXQFOQCG3oHJuQclC5xi5EfvnG3BbMG4NLgiem+II8UQwZi0+Rg+oSEDP60B4i1UkoOd1IPzhcgLKNFEBbkEFXAFlmmhBroACin3ADYaDGcXYmTYMBzHLyEEVFbAEzgTjZlsQHHzQvcvZYxuSrG2qBPS4EEseKlfAeK6AZE5AMregZK6AZJKHSrVZOgB+ANdF4+9b6Ntw21QV0NtbcqcIgg/af6rrqQ3J1jRlAnpaiGUPkytgnCYroKcENFkBbkEjuALGabIFuQJGUJ9aXQC3xJ+hFv423Db1j2v00IaklewEXE06B3UCelgHXAHJmq6Ad+Lx9+Ft9g3s4i7wk/xfOJx6LYE74VHZoq6ABfBK/BlKL4Hz7JvY1X3gO/lPc+n1FbgniEeKI4bXFbODWtJ6Hkkikegh8IH84F51vQceiGKQ7hB4ArwBPgO/yQ/4r7/38hp4TD/n2GZmZmZmVqk/fn3WcYBRdW0AAAAASUVORK5CYII="/></defs></svg></button>' +
+                    '</div>';
+                return html;
+            })
+
+            const todosHtml = todosHtmlArray.join('');
+            targetEl.innerHTML = todosHtml;
+        }
+
+        //přidání todo v html na stránku
+        const todoList = document.querySelector('.todoList')
+        createTodo(state.getTodos(), todoList);
+
+        Object.prototype.addTimestamp = function() {
+            this.timestamp = Date.now();
+        }
+
+        //Nastavení filtrování
+        const filters = {
+            all: document.querySelector('#filterAll'),
+            active: document.querySelector('#filterActive'),
+            completed: document.querySelector('#filterCompleted')
+        };
+
+        for (let filterName in filters) {
+            if (filters.hasOwnProperty(filterName)) {
+                let filterEl = filters[filterName];
+
+                (function(capturedFilterName) {
+                    filterEl.addEventListener('click', function(e) {
+                        filtersClick(capturedFilterName);
+                        if (filterEl.id === 'filterAll') {
+                            location.reload();
+                        }
+                        //odstranění elementů při filtrování
+                        if (filterEl.id === 'filterActive' || filterEl.id === 'filterCompleted') {
+                            const myDelete = document.querySelectorAll('.delete')
+                            for (i = 0; i < myDelete.length; i++) {
+                                console.log(myDelete[i])
+                                myDelete[i].parentNode.removeChild(myDelete[i])
+                            }
+                            const myCheckbox = document.querySelectorAll('.done')
+                            for (i = 0; i < myCheckbox.length; i++) {
+                                console.log(myCheckbox[i])
+                                myCheckbox[i].parentNode.removeChild(myCheckbox[i])
+                            }
+
+                        }
+                    });
+                }(filterName));
+            }
+        }
+
+        function filtersClick(newFilterType) {
+            for (let key in filters) {
+                if (filters.hasOwnProperty(key)) {
+                    let filter = filters[key];
+                    filter.classList.remove('selected');
+                }
+            }
+
+            filters[newFilterType].classList.add('selected');
+
+            state.setFilter(newFilterType);
+            createTodo(state.getTodos(), todoList);
+
+        }
+
+        //Delete všeho
+        const allDelete = document.querySelector('.deleteAll');
+        allDelete.addEventListener('click', function(e) {
+            let todos = document.querySelector('.todoList');
+            while (todos.firstChild) {
+                todos.removeChild(todos.firstChild);
+
+            }
+            localStorage.clear()
+            state.deleteTodos();
+
+        })
+
+        //načtení stránky
+        function loadTodos() {
+            const todolist = JSON.parse(localStorage.getItem("todo"))
+            if (todolist !== null) {
+                for (let i = 0; i < todolist.length; i++) {
+                    state.addTodo(todolist[i]);
+
+                    // Update html
+                    inputEl.value = '';
+                    createTodo(state.getTodos(), todoList);
+                }
+            }
+        }
+
+        document.addEventListener('onload', loadTodos());
+
+        //delete jednoho todo
+        const deleteEl = document.querySelectorAll('.delete');
+        for (let i = 0; i < deleteEl.length; i++) {
+            deleteEl[i].addEventListener('click', function(event) {
+                const myValue = deleteEl[i].parentElement.querySelector('label').className
+                const todolist = JSON.parse(localStorage.getItem("todo"))
+                const result = todolist.filter(todo => todo.todoValue != myValue)
+                localStorage.setItem('todo', JSON.stringify(result));
+                location.reload();
+            })
+
+        }
+
+        //filtrování todos
+        const doneEl = document.querySelectorAll('.done');
+        for (let i = 0; i < doneEl.length; i++) {
+            doneEl[i].addEventListener('click', function(event) {
+                console.log(doneEl[i].parentElement)
+                const myValue = doneEl[i].parentElement.querySelector('label').className
+                const todolist = JSON.parse(localStorage.getItem("todo"))
+                for (let i = 0; i < todolist.length; i++) {
+                    if (todolist[i].todoValue == myValue) {
+                        if (todolist[i].completed === false) {
+                            todolist[i].completed = true
+                            localStorage.setItem('todo', JSON.stringify(todolist));
+                            location.reload();
+                            return
+                        }
+                        if (todolist[i].completed === true) {
+                            todolist[i].completed = false
+                            localStorage.setItem('todo', JSON.stringify(todolist));
+                            location.reload();
+                            return
+                        }
+                    }
+                }
+            })
+        }
+    </script>
+</body>
+
+</html>
